@@ -15,7 +15,7 @@
 	<name>Data Reconciliation</name>
 	<description>Interview project - Data Reconciliation between data sets</description>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>8</java.version>
 	</properties>
 	<dependencies>
 		<dependency>
