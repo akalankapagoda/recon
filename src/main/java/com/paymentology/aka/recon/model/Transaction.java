@@ -1,5 +1,6 @@
 package com.paymentology.aka.recon.model;
 
+import java.math.BigInteger;
 import java.util.Date;
 
 /**
@@ -9,13 +10,14 @@ public class Transaction {
 
     private String transactionId;
 
-    private Date transactionDate;
+    // Keeping this as a String as converting this to a Date object doesn't add any business value as of yet
+    private String transactionDate;
 
     private String transactionType;
 
     private String profileName;
 
-    private Long amount;
+    private BigInteger amount;
 
     private String description;
 
@@ -31,11 +33,11 @@ public class Transaction {
         this.transactionId = transactionId;
     }
 
-    public Date getTransactionDate() {
+    public String getTransactionDate() {
         return transactionDate;
     }
 
-    public void setTransactionDate(Date transactionDate) {
+    public void setTransactionDate(String transactionDate) {
         this.transactionDate = transactionDate;
     }
 
@@ -55,11 +57,11 @@ public class Transaction {
         this.profileName = profileName;
     }
 
-    public Long getAmount() {
+    public BigInteger getAmount() {
         return amount;
     }
 
-    public void setAmount(Long amount) {
+    public void setAmount(BigInteger amount) {
         this.amount = amount;
     }
 
