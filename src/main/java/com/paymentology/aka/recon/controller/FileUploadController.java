@@ -1,6 +1,7 @@
 package com.paymentology.aka.recon.controller;
 
 import com.paymentology.aka.recon.exception.ReconException;
+import com.paymentology.aka.recon.model.ProcessingResults;
 import com.paymentology.aka.recon.model.ReconStatus;
 import com.paymentology.aka.recon.model.Response;
 import com.paymentology.aka.recon.model.Transaction;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -22,6 +22,7 @@ import java.util.logging.Logger;
  * Controller to handle file uploads.
  */
 @RestController
+@RequestMapping("file")
 public class FileUploadController {
 
     private final Logger logger = Logger.getLogger(FileUploadController.class.getName());
@@ -58,19 +59,66 @@ public class FileUploadController {
         return tempList;
     }
 
-    @PostMapping("/uploadFile")
+    /**
+     * Uploads a file for processing.
+     *
+     * The file is then submitted for pre-processing.
+     *
+     * @param file The file object
+     * @param identifier The file identifier
+     *
+     * @return Service response with file upload status
+     * @throws ReconException
+     */
+    @PostMapping
     public Response handleFileUpload(@RequestParam("file") MultipartFile file,
                                      @RequestParam("identifier") String identifier) throws ReconException {
 
         storageService.saveFile(identifier, file);
 
-        InputStream stream = storageService.readFile(identifier);
+        ProcessingResults processingResults = new ProcessingResults(identifier);
+        processingResults.setStatus(ReconStatus.PROCESSING);
 
-        reconciliationService.submitFileForProcessing(identifier, stream);
+        storageService.saveProcessingResults(identifier, processingResults);
+
+        reconciliationService.submitFileForPreProcessing(identifier, processingResults);
 
         return new Response(ReconStatus.SUCCESS, "Successfully uploaded the file");
     }
 
+    /**
+     * Get file pre-processing status.
+     *
+     * A reconciliation request cannot be submitted until pre-processing is complete.
+     *
+     * @param identifier The file identifier to check
+     *
+     * @return The file pre-processing status or {@link ReconStatus#NONE} if the file has not been submitted
+     * @throws ReconException
+     */
+    @GetMapping("/status")
+    public Response getFileUploadStatus(@RequestParam("identifier") String identifier) throws ReconException {
+
+        Response response = new Response();
+
+        ProcessingResults processingResults = storageService.getProcessingResults(identifier);
+
+        if (processingResults != null) {
+            response.setStatus(processingResults.getStatus());
+        } else {
+            response.setStatus(ReconStatus.NONE);
+            response.setMessage("File has not bee submitted");
+        }
+
+        return response;
+    }
+
+    /**
+     * Handle service layer errors.
+     *
+     * @param e The exception occurred
+     * @return A service error response
+     */
     @ExceptionHandler(ReconException.class)
     public ResponseEntity<?> handleStorageFileNotFound(ReconException e) {
 

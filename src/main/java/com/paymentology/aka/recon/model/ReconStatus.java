@@ -5,6 +5,23 @@ package com.paymentology.aka.recon.model;
  */
 public enum ReconStatus {
 
+    /**
+     * The action has been completed.
+     */
     SUCCESS,
-    ERROR
+
+    /**
+     * Action in progress.
+     */
+    PROCESSING,
+
+    /**
+     * The action has failed.
+     */
+    ERROR,
+
+    /**
+     * Data related to the specified action/entity is not found
+     */
+    NONE
 }

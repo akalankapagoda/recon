@@ -1,9 +1,9 @@
 package com.paymentology.aka.recon.services;
 
 import com.paymentology.aka.recon.model.ProcessingResults;
+import com.paymentology.aka.recon.model.ReconStatus;
 import com.paymentology.aka.recon.model.ReconciliationResults;
 import com.paymentology.aka.recon.model.Transaction;
-import org.apache.tomcat.jni.Proc;
 
 import java.util.*;
 
@@ -16,14 +16,14 @@ public class ReconProcessor implements Runnable {
 
     ReconciliationResults reconResults;
 
-    public ReconProcessor(StorageService storageService, ProcessingResults sourceResults, ProcessingResults targetResults) {
+    public ReconProcessor(StorageService storageService, ProcessingResults sourceResults,
+                          ProcessingResults targetResults, ReconciliationResults reconResults) {
+
         this.storageService = storageService;
         this.sourceResults = sourceResults;
         this.targetResults = targetResults;
-        reconResults = new ReconciliationResults();
+        this.reconResults = reconResults;
 
-        reconResults.setSource(sourceResults.getIdentifier());
-        reconResults.setTarget(targetResults.getIdentifier());
         reconResults.setSourceRecordsCount(sourceResults.getRecordsCount());
         reconResults.setTargetRecordsCount(targetResults.getRecordsCount());
     }
@@ -31,32 +31,62 @@ public class ReconProcessor implements Runnable {
     @Override
     public void run() {
 
+        Map<String, Transaction> sourceTransactions = sourceResults.getTransactions();
         Map<String, Transaction> sourceTransactionsWalletRef = sourceResults.getTransactionsWalletRef();
         Map<String, Transaction> sourceTransactionsOptionalRef = sourceResults.getTransactionsOptionalRef();
 
         Map<String, String> targetWalletRefToOptionalRef = targetResults.getWalletRefToOptionalRef();
 
-        int matchCount = 0;
-
-        List<String> matchedTargetWalletRefKeys = Collections.synchronizedList(new ArrayList<>());
-        List<String> unmatchedTargetWalletRefKeys = Collections.synchronizedList(new ArrayList<>());
+        Set<String> matchedTransactions = Collections.synchronizedSet(new HashSet<>());
+        List<String> suggestedTargetWalletRefKeys = Collections.synchronizedList(new ArrayList<>());
 
 
-        targetResults.getTransactionsWalletRef().entrySet().parallelStream().forEach(entry -> {
-            String walletRefKey = entry.getKey();
+        targetResults.getTransactions().entrySet().parallelStream().forEach(entry -> {
             Transaction transaction = entry.getValue();
+            String walletRefKey = RefKeyGenerator.getWalletRefKey(transaction);
 
-            if (sourceTransactionsWalletRef.containsKey(walletRefKey)) {
-                matchedTargetWalletRefKeys.add(walletRefKey);
-            } else if (sourceTransactionsOptionalRef.containsKey(targetWalletRefToOptionalRef.get(walletRefKey))) {
-                // Possible match
-            } else {
-                // Unmatched
+            String transactionId = transaction.getTransactionId();
+            String walletRefOptionalKey = targetWalletRefToOptionalRef.get(walletRefKey);
+
+            if (sourceTransactions.containsKey(transactionId)) { // Direct match
+                matchedTransactions.add(transactionId);
+                reconResults.incrementMatchCount();
+            } else if (sourceTransactionsWalletRef.containsKey(walletRefKey) ||
+                    sourceTransactionsOptionalRef.containsKey(walletRefOptionalKey)) {  // Possible match
+
+                suggestedTargetWalletRefKeys.add(walletRefKey);
+                reconResults.addSuggestion(sourceTransactionsWalletRef.get(walletRefKey), transaction);
+
+            } else { // Unmatched
+
+                reconResults.addUnmatchedTargetTransaction(transaction);
             }
 
         });
 
 
+        // Now we've gone through the target file and got the numbers.
+        // Next is to cross reference the identified matches and possible matches on the source and filter out unmatched
+        // ones in the source.
+
+        sourceResults.getTransactions().entrySet().parallelStream().forEach(entry -> {
+            Transaction transaction = entry.getValue();
+            String walletRefKey = RefKeyGenerator.getWalletRefKey(transaction);
+
+            String transactionId = transaction.getTransactionId();
+
+            if (!(matchedTransactions.contains(transactionId) || suggestedTargetWalletRefKeys.contains(walletRefKey))) { // Not matched or suggested
+                reconResults.addUnmatchedSourceTransaction(transaction);
+            }
+
+        });
+
+        // Finally update the results status
+
+        reconResults.setStatus(ReconStatus.SUCCESS);
+
+        // This is not needed in our in-memory storage, but will be required if we're using a DB
+        storageService.saveReconciliationResults(reconResults);
 
     }
 }

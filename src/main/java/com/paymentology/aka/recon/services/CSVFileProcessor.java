@@ -1,6 +1,8 @@
 package com.paymentology.aka.recon.services;
 
+import com.paymentology.aka.recon.exception.ReconException;
 import com.paymentology.aka.recon.model.ProcessingResults;
+import com.paymentology.aka.recon.model.ReconStatus;
 import com.paymentology.aka.recon.model.Transaction;
 
 import java.io.BufferedReader;
@@ -14,20 +16,22 @@ import java.util.logging.Logger;
 public class CSVFileProcessor extends FileProcessor {
 
     private static final String SEPARATOR = ",";
+
     private final Logger logger = Logger.getLogger(CSVFileProcessor.class.getName());
 
-    public CSVFileProcessor(StorageService storageService, String identifier, InputStream inputStream) {
-        super(storageService, identifier, inputStream);
+    public CSVFileProcessor(StorageService storageService, String identifier, ProcessingResults processingResults) {
+        super(storageService, identifier, processingResults);
     }
 
     @Override
     public void run() {
 
-        ProcessingResults results = new ProcessingResults(identifier);
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-
         try {
+
+            InputStream inputStream = storageService.readFile(identifier);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+
 
             if (reader.ready()) { // Skip the first line which contains the headings
                 reader.readLine();
@@ -61,12 +65,17 @@ public class CSVFileProcessor extends FileProcessor {
                 transaction.setTransactionType(fields[6]);
                 transaction.setWalletReference(fields[7]);
 
-                results.addTransaction(transaction);
+                processingResults.addTransaction(transaction);
             }
-        } catch (IOException e) {
+
+            processingResults.setStatus(ReconStatus.SUCCESS);
+        } catch (ReconException | IOException e) {
             logger.log(Level.SEVERE, "Failed to process file : " +  identifier, e);
+
+            processingResults.setStatus(ReconStatus.ERROR);
+            processingResults.setMessage(e.getMessage()); // TODO: Sanitize this message for public viewing
         }
 
-        storageService.saveProcessingResults(identifier, results);
+        storageService.saveProcessingResults(identifier, processingResults);
     }
 }

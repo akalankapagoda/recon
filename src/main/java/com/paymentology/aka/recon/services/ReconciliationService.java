@@ -10,6 +10,9 @@ import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Transaction reconciliation service with handles operation of the analysis.
+ */
 @Service
 public class ReconciliationService {
 
@@ -25,10 +28,16 @@ public class ReconciliationService {
         this.storageService = storageService;
     }
 
-    public void submitFileForProcessing(String identifier, InputStream inputStream) {
+    /**
+     * Submit a file for pre-processing.
+     *
+     * @param identifier The file identifier
+     * @param processingResults The processing results to populate
+     */
+    public void submitFileForPreProcessing(String identifier, ProcessingResults processingResults) {
 
-        // As of now we're hardcoding to CSV, but we can separate this out later with a file type
-        executorService.submit(new CSVFileProcessor(storageService, identifier, inputStream));
+        // TODO: As of now we're hardcoding to CSV, but we can separate this out later with a file type
+        executorService.submit(new CSVFileProcessor(storageService, identifier, processingResults));
     }
 
     public String getProcessingStatus(String identifier) {
@@ -48,9 +57,13 @@ public class ReconciliationService {
         if (sourceResults == null || targetResults == null) {
             reconResults.setStatus(ReconStatus.ERROR);
             reconResults.setMessage("Source or target is missing");
-            storageService.saveReconciliationResults(reconResults);
+
         } else {
-            executorService.submit(new ReconProcessor(storageService, sourceResults, targetResults));
+
+            reconResults.setStatus(ReconStatus.PROCESSING);
+            storageService.saveReconciliationResults(reconResults);
+
+            executorService.submit(new ReconProcessor(storageService, sourceResults, targetResults, reconResults));
         }
 
 

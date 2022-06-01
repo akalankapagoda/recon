@@ -1,5 +1,7 @@
 package com.paymentology.aka.recon.services;
 
+import com.paymentology.aka.recon.model.ProcessingResults;
+
 import java.io.InputStream;
 
 /**
@@ -11,11 +13,11 @@ public abstract class FileProcessor implements Runnable {
 
     protected String identifier;
 
-    protected InputStream inputStream;
+    protected ProcessingResults processingResults;
 
-    FileProcessor(StorageService storageService, String identifier, InputStream inputStream) {
+    FileProcessor(StorageService storageService, String identifier, ProcessingResults processingResults) {
         this.storageService = storageService;
         this.identifier = identifier;
-        this.inputStream = inputStream;
+        this.processingResults =  processingResults;
     }
 }

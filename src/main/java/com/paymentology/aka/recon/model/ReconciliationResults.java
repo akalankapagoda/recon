@@ -1,7 +1,6 @@
 package com.paymentology.aka.recon.model;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ReconciliationResults extends Response {
 
@@ -15,7 +14,15 @@ public class ReconciliationResults extends Response {
 
     private int targetRecordsCount;
 
-    private Map<Transaction, Transaction> suggestions = new HashMap<>();
+    /**
+     * A possible match.
+     *
+     * <Source Transaction, Target Transaction>
+     */
+    private Map<Transaction, Transaction> suggestions = Collections.synchronizedMap(new HashMap<>());
+
+    private List<Transaction> unmatchedSourceTransactions = Collections.synchronizedList(new ArrayList<>());
+    private List<Transaction> unmatchedTargetTransactions = Collections.synchronizedList(new ArrayList<>());
 
     public String getSource() {
         return source;
@@ -61,11 +68,27 @@ public class ReconciliationResults extends Response {
         return suggestions;
     }
 
+    public List<Transaction> getUnmatchedSourceTransactions() {
+        return unmatchedSourceTransactions;
+    }
+
+    public List<Transaction> getUnmatchedTargetTransactions() {
+        return unmatchedTargetTransactions;
+    }
+
     public void incrementMatchCount() {
         matchCount++;
     }
 
     public void addSuggestion(Transaction sourceTransaction, Transaction targetTransaction) {
         suggestions.put(sourceTransaction, targetTransaction);
+    }
+
+    public void addUnmatchedSourceTransaction(Transaction transaction) {
+        unmatchedSourceTransactions.add(transaction);
+    }
+
+    public void addUnmatchedTargetTransaction(Transaction transaction) {
+        unmatchedTargetTransactions.add(transaction);
     }
 }

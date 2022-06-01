@@ -5,13 +5,17 @@ import com.paymentology.aka.recon.services.RefKeyGenerator;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ProcessingResults {
+public class ProcessingResults extends Response {
 
     private String identifier;
+
+    private Map<String, Transaction> transactions = new HashMap<>();
 
     private Map<String, Transaction> transactionsWalletRef = new HashMap<>();
 
     private Map<String, Transaction> transactionsOptionalRef = new HashMap<>();
+
+    private int recordsCount;
 
     /**
      * A mapping between wallet ref and optional ref.
@@ -24,6 +28,8 @@ public class ProcessingResults {
 
     public void addTransaction(Transaction transaction) {
 
+        transactions.put(transaction.getTransactionId(), transaction);
+
         String walletRefKey = RefKeyGenerator.getWalletRefKey(transaction);
         String optionalRef = RefKeyGenerator.getOptionalRefKey(transaction);
 
@@ -32,6 +38,8 @@ public class ProcessingResults {
         transactionsOptionalRef.put(optionalRef, transaction);
 
         walletRefToOptionalRef.put(walletRefKey, optionalRef);
+
+        recordsCount++;
     }
 
     public String getIdentifier() {
@@ -39,7 +47,11 @@ public class ProcessingResults {
     }
 
     public int getRecordsCount() {
-        return Math.max(transactionsWalletRef.size(), transactionsOptionalRef.size());
+        return recordsCount;
+    }
+
+    public Map<String, Transaction> getTransactions() {
+        return transactions;
     }
 
     public Map<String, Transaction> getTransactionsWalletRef() {
