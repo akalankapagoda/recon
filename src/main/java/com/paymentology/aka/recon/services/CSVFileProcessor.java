@@ -44,6 +44,7 @@ public class CSVFileProcessor extends FileProcessor {
                 String[] fields = line.split(SEPARATOR);
 
                 if (fields.length != 8) { // This line is probably erroneous
+                    logger.log(Level.WARNING, "Skipping invalid line in the file : " + identifier);
                     continue;
                 }
 
