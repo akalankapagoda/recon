@@ -13,13 +13,8 @@ public class ReconciliationResults extends Response {
     private int sourceRecordsCount;
 
     private int targetRecordsCount;
-
-    /**
-     * A possible match.
-     *
-     * <Source Transaction, Target Transaction>
-     */
-    private Map<Transaction, Transaction> suggestions = Collections.synchronizedMap(new HashMap<>());
+    private List<Transaction> sourceSuggestions = Collections.synchronizedList(new ArrayList<>());
+    private List<Transaction> targetSuggestions = Collections.synchronizedList(new ArrayList<>());
 
     private List<Transaction> unmatchedSourceTransactions = Collections.synchronizedList(new ArrayList<>());
     private List<Transaction> unmatchedTargetTransactions = Collections.synchronizedList(new ArrayList<>());
@@ -64,8 +59,12 @@ public class ReconciliationResults extends Response {
         this.targetRecordsCount = targetRecordsCount;
     }
 
-    public Map<Transaction, Transaction> getSuggestions() {
-        return suggestions;
+    public List<Transaction> getSourceSuggestions() {
+        return sourceSuggestions;
+    }
+
+    public List<Transaction> getTargetSuggestions() {
+        return targetSuggestions;
     }
 
     public List<Transaction> getUnmatchedSourceTransactions() {
@@ -81,7 +80,8 @@ public class ReconciliationResults extends Response {
     }
 
     public void addSuggestion(Transaction sourceTransaction, Transaction targetTransaction) {
-        suggestions.put(sourceTransaction, targetTransaction);
+        sourceSuggestions.add(sourceTransaction);
+        targetSuggestions.add(targetTransaction);
     }
 
     public void addUnmatchedSourceTransaction(Transaction transaction) {
