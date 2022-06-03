@@ -70,7 +70,7 @@ public class ReconController {
     }
 
     /**
-     * Get the status of a submitted reconciliation process.
+     * Get the results of a submitted reconciliation process.
      *
      * @param sourceIdentifier The source identifier of the submitted reconciliation
      * @param targetIdentifier The target identifier of the submitted reconciliation
@@ -78,21 +78,24 @@ public class ReconController {
      * @return The execution status of the reconciliation or {@link ReconStatus#NONE} if not submitted before
      * @throws ReconException
      */
-    @GetMapping("/status")
-    public Response getReconStatus(@RequestParam("source") String sourceIdentifier,
+    @GetMapping("/results")
+    public Response getReconResults(@RequestParam("source") String sourceIdentifier,
                                           @RequestParam("target") String targetIdentifier) throws ReconException {
 
-        Response response = new Response();
+        Response response;
 
         ReconciliationResults reconResults = storageService.readReconciliationResults(sourceIdentifier, targetIdentifier);
 
         if (reconResults != null) {
-            response.setStatus(reconResults.getStatus());
+            response =  reconResults;
         } else {
+            response = new Response();
             response.setStatus(ReconStatus.NONE);
             response.setMessage("Reconciliation has not been triggered for the provided files");
         }
 
+        // TODO: There is a risk of reconResults being too big for a network request.
+        //  We need to back the results fetching by a DB and implement pagination to address this
         return response;
     }
 }
