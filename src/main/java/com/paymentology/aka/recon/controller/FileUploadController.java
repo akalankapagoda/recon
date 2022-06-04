@@ -27,11 +27,6 @@ public class FileUploadController {
 
     private final Logger logger = Logger.getLogger(FileUploadController.class.getName());
 
-    /**
-     * A temporary work directory to save uploaded files temporarily.
-     */
-    private static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + File.separator + "recon";
-
     private final StorageService storageService;
     private final ReconciliationService reconciliationService;
 

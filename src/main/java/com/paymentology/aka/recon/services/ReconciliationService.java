@@ -6,7 +6,6 @@ import com.paymentology.aka.recon.model.ReconciliationResults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -45,6 +44,12 @@ public class ReconciliationService {
         return "pending";
     }
 
+    /**
+     * Pick pre-processed results for a given two files and submit for reconciliation.
+     *
+     * @param source
+     * @param target
+     */
     public void reconcileTransactions(String source, String target) {
 
         ReconciliationResults reconResults = new ReconciliationResults();

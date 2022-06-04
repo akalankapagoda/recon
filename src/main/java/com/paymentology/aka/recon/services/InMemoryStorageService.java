@@ -11,6 +11,11 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Storage service implementation which is storing everything in-memory.
+ *
+ * Warning! Not suitable for production.
+ */
 @Service
 public class InMemoryStorageService implements StorageService {
 

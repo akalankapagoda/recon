@@ -2,8 +2,6 @@ package com.paymentology.aka.recon.services;
 
 import com.paymentology.aka.recon.model.ProcessingResults;
 
-import java.io.InputStream;
-
 /**
  * A worker thread for processing submitted files.
  */

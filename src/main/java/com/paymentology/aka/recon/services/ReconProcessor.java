@@ -7,6 +7,9 @@ import com.paymentology.aka.recon.model.Transaction;
 
 import java.util.*;
 
+/**
+ * A worker thread to perform reconciliation.
+ */
 public class ReconProcessor implements Runnable {
 
     private StorageService storageService;
@@ -28,6 +31,13 @@ public class ReconProcessor implements Runnable {
         reconResults.setTargetRecordsCount(targetResults.getRecordsCount());
     }
 
+    /**
+     * Go through two set of pre-processed data and compare.
+     *
+     * 1. Compare transaction Id which is a direct match
+     * 2. Compare wallet ref and description + amount match to suggest a possible match
+     * 3. Compare description + narrative + amount match to suggest a possible match
+     */
     @Override
     public void run() {
 
@@ -39,6 +49,7 @@ public class ReconProcessor implements Runnable {
 
         Set<String> matchedTransactions = Collections.synchronizedSet(new HashSet<>());
         List<String> suggestedTargetWalletRefKeys = Collections.synchronizedList(new ArrayList<>());
+        List<String> suggestedTargetOptionalRefKeys = Collections.synchronizedList(new ArrayList<>());
 
 
         targetResults.getTransactions().entrySet().parallelStream().forEach(entry -> {
@@ -51,12 +62,14 @@ public class ReconProcessor implements Runnable {
             if (sourceTransactions.containsKey(transactionId)) { // Direct match
                 matchedTransactions.add(transactionId);
                 reconResults.incrementMatchCount();
-            } else if (sourceTransactionsWalletRef.containsKey(walletRefKey) ||
-                    sourceTransactionsOptionalRef.containsKey(walletRefOptionalKey)) {  // Possible match
+            } else if (sourceTransactionsWalletRef.containsKey(walletRefKey)) {  // Possible match with wallet ref
 
                 suggestedTargetWalletRefKeys.add(walletRefKey);
                 reconResults.addSuggestion(sourceTransactionsWalletRef.get(walletRefKey), transaction);
 
+            } else if (sourceTransactionsOptionalRef.containsKey(walletRefOptionalKey)) { // Possible match with other fields
+                suggestedTargetOptionalRefKeys.add(walletRefOptionalKey);
+                reconResults.addSuggestion(sourceTransactionsOptionalRef.get(walletRefOptionalKey), transaction);
             } else { // Unmatched
 
                 reconResults.addUnmatchedTargetTransaction(transaction);
@@ -72,10 +85,13 @@ public class ReconProcessor implements Runnable {
         sourceResults.getTransactions().entrySet().parallelStream().forEach(entry -> {
             Transaction transaction = entry.getValue();
             String walletRefKey = RefKeyGenerator.getWalletRefKey(transaction);
+            String optionalRefKey = RefKeyGenerator.getOptionalRefKey(transaction);
 
             String transactionId = transaction.getTransactionId();
 
-            if (!(matchedTransactions.contains(transactionId) || suggestedTargetWalletRefKeys.contains(walletRefKey))) { // Not matched or suggested
+            if (!(matchedTransactions.contains(transactionId) ||
+                    suggestedTargetWalletRefKeys.contains(walletRefKey) ||
+                    suggestedTargetOptionalRefKeys.contains(optionalRefKey))) { // Not matched or suggested
                 reconResults.addUnmatchedSourceTransaction(transaction);
             }
 

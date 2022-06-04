@@ -38,6 +38,9 @@ public class ReconController {
     public Response reconcileTransactions(@RequestParam("source") String sourceIdentifier,
                                               @RequestParam("target") String targetIdentifier) throws ReconException {
 
+        // TODO: We need to append something like the session Id to the identifier here so that
+        //  if multiple people use the same file name, they won't interfere with each other
+
         Response response;
 
         // See if this is already processing

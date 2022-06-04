@@ -13,6 +13,9 @@ import java.math.BigInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Process a Transaction log that is in CSV format.
+ */
 public class CSVFileProcessor extends FileProcessor {
 
     private static final String SEPARATOR = ",";
@@ -23,6 +26,9 @@ public class CSVFileProcessor extends FileProcessor {
         super(storageService, identifier, processingResults);
     }
 
+    /**
+     * Parse the CSV and create a Transaction for each line and save the results into store.
+     */
     @Override
     public void run() {
 
